@@ -1,5 +1,10 @@
 # recursemp3
 
+# REQUIREMENTS
+recursemp3 has been developed under Python 3.4. It will require the following python libraries to work: 
+ * mutagen (edition of audio file metainformation)
+ * urllib2 (used in fetching the cover art)
+
 # USAGE
 `recursemp3 -d <directory name> [-v|--verbose] [--debug] [-r|--remove] [-c|--cover-only] [-n|--no-cover]`
 
