@@ -23,6 +23,7 @@ def display_progress(i_number_of_files_processed, i_number_of_files_to_process, 
 
 def main():
     # Automatically send a RESET color at the end of every print
+    # guy
     colorama.init(autoreset=True)
 
     parser = argparse.ArgumentParser(
