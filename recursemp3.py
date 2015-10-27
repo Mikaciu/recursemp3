@@ -210,7 +210,7 @@ def main():
 
         # COVER #
         # check for the cover only once per directory
-        if (not args.no_cover or args.only_cover) and not s_track_directory in dict_missing_cover_directories.keys():
+        if (not args.no_cover or args.only_cover) and s_track_directory not in dict_missing_cover_directories.keys():
 
             # no image file in the current directory
             b_cover_art_present = len([f for f in os.listdir(s_track_directory)
