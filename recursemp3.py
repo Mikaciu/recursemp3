@@ -12,7 +12,7 @@ from mutagen.id3 import ID3, Encoding, TPE1, TALB, TCON, TPE2, TSOA, TRCK, TPOS,
 from CoverFetcher import CoverFetcher
 
 
-def display_progress(i_number_of_files_processed, i_number_of_files_to_process, i_step = 10, last_line = False):
+def display_progress(i_number_of_files_processed, i_number_of_files_to_process, i_step=10, last_line=False):
     b_step_reached = bool((i_number_of_files_processed % i_step) == 0)
 
     if b_step_reached ^ last_line:
@@ -32,11 +32,14 @@ def main():
     parser.add_argument("-v", "--verbose", required=False, action="store_true", help="Increase output verbosity")
     parser.add_argument("-r", "--remove-tags", action="store_true", default=False,
                         help="Remove existing tags before applying new tags")
-    parser.add_argument("--debug", action="store_true", default=False, help="Insanely huge amount of output. Do not use on large trees")
+    parser.add_argument("--debug", action="store_true", default=False,
+                        help="Insanely huge amount of output. Do not use on large trees")
 
     cover_group = parser.add_mutually_exclusive_group()
-    cover_group.add_argument("-n", "--no-cover", action="store_true", default=False, help="Do not try to fetch the album art (way much faster)")
-    cover_group.add_argument("-c", "--only-cover", action="store_true", default=False, help="Only fetch the album art (needs an Internet connection)")
+    cover_group.add_argument("-n", "--no-cover", action="store_true", default=False,
+                             help="Do not try to fetch the album art (way much faster)")
+    cover_group.add_argument("-c", "--only-cover", action="store_true", default=False,
+                             help="Only fetch the album art (needs an Internet connection)")
 
     args = parser.parse_args()
 
@@ -133,7 +136,8 @@ def main():
                     # remove the artist name from the track name, now that we will tag it onto the artist name
                     s_track_name = s_track_name.replace('(' + s_artist_name + ')', '')
                 else:
-                    print(colorama.Fore.YELLOW + "WRN: Could not find a matching artist in " + filename_without_extension)
+                    print(
+                        colorama.Fore.YELLOW + "WRN: Could not find a matching artist in " + filename_without_extension)
                 s_track_number = s_disk_number = '0/0'
 
             if s_album_name == 'various albums':
@@ -160,11 +164,12 @@ def main():
             o_tags_to_set.add(TPE1(encoding=Encoding.UTF8, text=s_artist_name))  # Artist
             o_tags_to_set.add(TALB(encoding=Encoding.UTF8, text=s_album_name))  # Album
             o_tags_to_set.add(TPE2(encoding=Encoding.UTF8,
-                                    text=s_album_artist_name))  # Album artist (in brackets, for VA albums)
+                                   text=s_album_artist_name))  # Album artist (in brackets, for VA albums)
             o_tags_to_set.add(TSOA(encoding=Encoding.UTF8, text=s_album_sort))  # Album sort number
             o_tags_to_set.add(TRCK(encoding=Encoding.UTF8, text=s_track_number))
             o_tags_to_set.add(TIT2(encoding=Encoding.UTF8, text=s_track_name))
-            o_tags_to_set.add(TSOT(encoding=Encoding.UTF8, text=s_track_number + '.' + s_disk_number))  # Track sort number
+            o_tags_to_set.add(
+                TSOT(encoding=Encoding.UTF8, text=s_track_number + '.' + s_disk_number))  # Track sort number
             o_tags_to_set.add(TPOS(encoding=Encoding.UTF8, text=s_disk_number))
             o_tags_to_set.add(TFLT(encoding=Encoding.UTF8, text='MPG/3'))
 
@@ -184,14 +189,14 @@ def main():
             elif o_current_tags is not None:
                 # do not remove all tags, but still remove some
                 for sFrameToRemove in [
-                    "APIC", # Attached picture (will mess up with the downloaded cover art)
-                    "COMM", # Comments
-                    "TDEN", # Encoding time
-                    "TDOR", # Original release time
-                    "TDRC", # Recording time
-                    "TDRL", # Release time
+                    "APIC",  # Attached picture (will mess up with the downloaded cover art)
+                    "COMM",  # Comments
+                    "TDEN",  # Encoding time
+                    "TDOR",  # Original release time
+                    "TDRC",  # Recording time
+                    "TDRL",  # Release time
                     "TDTG"  # Tagging time
-                    "USLT", # Unsynchronized lyric/text transcription
+                    "USLT",  # Unsynchronized lyric/text transcription
                 ]:
                     o_current_tags.delall(sFrameToRemove)
 

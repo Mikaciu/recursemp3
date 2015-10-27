@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-import urllib3
-import certifi
 from queue import Queue
 from threading import Thread
 import urllib.parse
 import json
 import os
-import colorama
 import logging
+
+import urllib3
+import certifi
+import colorama
 
 logger = logging.getLogger('CoverFetcher')
 
@@ -20,7 +21,8 @@ class CoverFetcher:
 
         self.q_objects_to_process = Queue(maxsize=0)
         for s_current_directory in dict_missing_cover_directories.keys():
-            self.q_objects_to_process.put([dict_missing_cover_directories[s_current_directory][0], dict_missing_cover_directories[s_current_directory][1], s_current_directory])
+            self.q_objects_to_process.put([dict_missing_cover_directories[s_current_directory][0],
+                                           dict_missing_cover_directories[s_current_directory][1], s_current_directory])
 
         self.params = {
             'format': 'json',
@@ -49,7 +51,6 @@ class CoverFetcher:
             self.q_objects_to_process.put(None)
         for thr_current_thread in self.l_threads:
             thr_current_thread.join()
-
 
     def thread_process(self, q_current_queue):
         while True:
@@ -98,7 +99,6 @@ class CoverFetcher:
         except:
             logger.exception('Error while searching album cover')
             return None
-
 
 
 if __name__ == "__main__":
