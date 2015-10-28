@@ -5,27 +5,28 @@ import os
 import sys
 import fnmatch
 import re
+import logging
 
-import colorama
 from mutagen.id3 import ID3, Encoding, TPE1, TALB, TCON, TPE2, TSOA, TRCK, TPOS, TIT2, TSOT, TFLT, ID3NoHeaderError
 
 from CoverFetcher import CoverFetcher
+import logger_config
 
+mainlogger = logging.getLogger("recursemp3")
+mainlogger.setLevel(logging.INFO)
+LOGGER_2DO = logging.INFO + 1
+logging.addLevelName(LOGGER_2DO, '2DO')
 
 def display_progress(i_number_of_files_processed, i_number_of_files_to_process, i_step=10, last_line=False):
     b_step_reached = bool((i_number_of_files_processed % i_step) == 0)
 
     if b_step_reached ^ last_line:
-        print(colorama.Fore.GREEN + "OUT: Processed " + str(i_number_of_files_processed) + " of " + str(
+        mainlogger.info("OUT: Processed " + str(i_number_of_files_processed) + " of " + str(
             i_number_of_files_to_process) + " (" + str(
             round((100 * i_number_of_files_processed) / i_number_of_files_to_process, 2)) + "%).")
 
 
 def main():
-    # Automatically send a RESET color at the end of every print
-    # guy
-    colorama.init(autoreset=True)
-
     parser = argparse.ArgumentParser(
         description="Process all MP3 files contained in the argument, "
                     "and tag them <genre>/<artist>/[<albumindex>.]<album>/[<trackindex>.]<trackname>")
@@ -46,12 +47,13 @@ def main():
 
     if args.debug:
         args.verbose = True
+        mainlogger.setLevel(logging.DEBUG)
 
     if args.debug:
-        print(colorama.Fore.MAGENTA + "DBG: args -> " + str(args))
+        mainlogger.debug("args -> " + str(args))
 
     if not os.path.isdir(args.directory):
-        print(colorama.Fore.RED + 'ERR: the argument supplied (' + args.directory + ') is not a directory.')
+        mainlogger.error('the argument supplied (' + args.directory + ') is not a directory.')
         sys.exit(1)
 
     # INIT #
@@ -73,7 +75,7 @@ def main():
     i_number_of_files_to_process = len(l_mp3_files)
     display_progress(i_number_of_files_processed, i_number_of_files_to_process)
     if i_number_of_files_to_process == 0:
-        print(colorama.Fore.YELLOW + "WRN: No files to process")
+        mainlogger.warn("No files to process")
         sys.exit(0)
 
     # SEARCH #
@@ -91,7 +93,7 @@ def main():
         current_root, s_genre_name = os.path.split(current_root)
 
         if not args.only_cover:
-            print(colorama.Fore.BLUE + "2DO: tagging " + file_name)
+            mainlogger.log(LOGGER_2DO, "Processing " + file_name)
             s_album_sort = ''
 
             m_album_index_found = re.match(p_find_album_index, s_album_name)
@@ -99,7 +101,7 @@ def main():
                 s_album_sort = m_album_index_found.group('TSOA')
                 s_album_name = m_album_index_found.group('TALB')
             elif args.debug:
-                print(colorama.Fore.YELLOW + "WRN: Could not find an album index in " + s_album_name)
+                mainlogger.warn("Could not find an album index in " + s_album_name)
 
             # TPOS / TRCK : track and disk number
             m_track_and_disk_index_found = re.match(p_find_track_and_disk_information, filename_without_extension)
@@ -137,27 +139,25 @@ def main():
                     # remove the artist name from the track name, now that we will tag it onto the artist name
                     s_track_name = s_track_name.replace('(' + s_artist_name + ')', '')
                 else:
-                    print(
-                        colorama.Fore.YELLOW + "WRN: Could not find a matching artist in " + filename_without_extension)
+                    mainlogger.warn("Could not find a matching artist in " + filename_without_extension)
                 s_track_number = s_disk_number = '0/0'
 
             if s_album_name == 'various albums':
                 s_album_name = 'various ' + s_genre_name.lower() + ' albums'
 
             if s_album_name == '' or s_artist_name == '' or s_genre_name == '':
-                print(
-                    colorama.Fore.RED + 'ERR: For file ' + current_file + ': cannot extract album <' + s_album_name +
+                mainlogger.error('For file ' + current_file + ': cannot extract album <' + s_album_name +
                     '>, artist <' + s_artist_name + '> or genre <' + s_genre_name + '> information')
 
             # TAGGING #
-            # create ID3 tag if not present
             try:
                 o_current_tags = ID3(current_file)
             except ID3NoHeaderError:
-                print(colorama.Fore.YELLOW + "WRN: No ID3 header found. Adding ID3 header.")
+                # create ID3 tag if not present
+                mainlogger.warn("No ID3 header found. Adding ID3 header.")
                 o_current_tags = ID3()
             except Exception as err:
-                print(colorama.Fore.RED + 'ERR: For file ' + current_file + ', found exception "' + str(err) + '"')
+                mainlogger.error('For file ' + current_file + ', found exception "' + str(err) + '"')
                 continue
 
             o_tags_to_set = ID3()
@@ -174,6 +174,7 @@ def main():
             o_tags_to_set.add(TPOS(encoding=Encoding.UTF8, text=s_disk_number))
             o_tags_to_set.add(TFLT(encoding=Encoding.UTF8, text='MPG/3'))
 
+            mainlogger.debug("BGN tag removal")
             if args.remove_tags:
                 l_tags_to_remove = []
                 # iterate through all tags found in file
@@ -182,10 +183,11 @@ def main():
                         # append to the list of tags to remove
                         l_tags_to_remove.append(s_current_tag_key)
 
+                mainlogger.debug("l_tags_to_remove -> " + str(l_tags_to_remove))
                 for s_current_tag_to_remove in l_tags_to_remove:
                     # remove all tags not in the o_current_tags list
                     if args.verbose:
-                        print(colorama.Fore.GREEN + "OUT: Deleting frame " + s_current_tag_key)
+                        mainlogger.info("Deleting frame " + s_current_tag_key)
                     o_current_tags.delall(s_current_tag_key)
             elif o_current_tags is not None:
                 # do not remove all tags, but still remove some
@@ -201,10 +203,17 @@ def main():
                 ]:
                     o_current_tags.delall(sFrameToRemove)
 
+            mainlogger.debug("END tag removal")
+            mainlogger.info("Tags removed")
+
+            mainlogger.debug("Setting tags")
             for sCurrentTag in o_tags_to_set:
                 o_current_tags.add(o_tags_to_set[sCurrentTag])
+            mainlogger.debug("Tags are all set")
 
+            mainlogger.debug("Saving file")
             o_current_tags.save(filename=current_file, v1=0, v2_version=4)
+            mainlogger.debug("Save done")
 
         i_number_of_files_processed += 1
         display_progress(i_number_of_files_processed, i_number_of_files_to_process)
@@ -218,14 +227,14 @@ def main():
                                        if os.path.isfile(os.path.join(s_track_directory, f)) and
                                        p_is_image_file.search(f)]) > 0
             if not b_cover_art_present:
-                print(colorama.Fore.BLUE + "OUT: adding " + s_track_directory + " for cover search")
+                mainlogger.info("adding " + s_track_directory + " for cover search")
                 # add the current directory to the list of directories to process for cover art
                 dict_missing_cover_directories[s_track_directory] = [s_artist_name, s_album_name]
 
     display_progress(i_number_of_files_processed, i_number_of_files_to_process, last_line=True)
 
     if len(dict_missing_cover_directories) > 0:
-        print(colorama.Fore.GREEN + "OUT: fetching covers")
+        mainlogger.info("fetching covers")
         cover_url = CoverFetcher(dict_missing_cover_directories)
         cover_url.go_fetch()
 
