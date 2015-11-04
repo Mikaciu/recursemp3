@@ -4,6 +4,7 @@
 recursemp3 has been developed under Python 3.4. It will require the following python libraries to work: 
  * mutagen (edition of audio file metainformation)
  * urllib3 (used in fetching the cover art)
+ * certifi (also used in fetching the cover art)
  * argparse (for argument handling)
  * colorama (for pretty output)
  * colorlog (for pretty logging output)
