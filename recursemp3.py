@@ -17,6 +17,7 @@ mainlogger.setLevel(logging.INFO)
 LOGGER_2DO = logging.INFO + 1
 logging.addLevelName(LOGGER_2DO, '2DO')
 
+
 def display_progress(i_number_of_files_processed, i_number_of_files_to_process, i_step=10, last_line=False):
     b_step_reached = bool((i_number_of_files_processed % i_step) == 0)
 
@@ -147,7 +148,7 @@ def main():
 
             if s_album_name == '' or s_artist_name == '' or s_genre_name == '':
                 mainlogger.error('For file ' + current_file + ': cannot extract album <' + s_album_name +
-                    '>, artist <' + s_artist_name + '> or genre <' + s_genre_name + '> information')
+                                 '>, artist <' + s_artist_name + '> or genre <' + s_genre_name + '> information')
 
             # TAGGING #
             try:
@@ -176,19 +177,15 @@ def main():
 
             mainlogger.debug("BGN tag removal")
             if args.remove_tags:
-                l_tags_to_remove = []
-                # iterate through all tags found in file
-                for s_current_tag_key in o_current_tags.keys():
-                    if not s_current_tag_key in o_tags_to_set.keys():
-                        # append to the list of tags to remove
-                        l_tags_to_remove.append(s_current_tag_key)
 
+                l_tags_to_remove = [e for e in o_current_tags.keys() if e not in o_tags_to_set.keys()]
                 mainlogger.debug("l_tags_to_remove -> " + str(l_tags_to_remove))
+
                 for s_current_tag_to_remove in l_tags_to_remove:
                     # remove all tags not in the o_current_tags list
                     if args.verbose:
-                        mainlogger.info("Deleting frame " + s_current_tag_key)
-                    o_current_tags.delall(s_current_tag_key)
+                        mainlogger.info("Deleting frame " + s_current_tag_to_remove)
+                    o_current_tags.delall(s_current_tag_to_remove)
             elif o_current_tags is not None:
                 # do not remove all tags, but still remove some
                 for sFrameToRemove in [
