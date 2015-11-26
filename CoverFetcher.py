@@ -10,9 +10,6 @@ import urllib3
 import certifi
 import colorama
 
-logger = logging.getLogger('CoverFetcher')
-
-
 class CoverFetcher:
     def __init__(self, dict_missing_cover_directories, i_max_concurrent_jobs=5):
 
@@ -35,7 +32,12 @@ class CoverFetcher:
         self.SEARCH_URL = "https://ws.audioscrobbler.com/2.0/?"
 
         self.l_threads = []
+        
+        self.logger = logging.getLogger('CoverFetcher')
 
+    def set_logger_level(self, i_logger_level):
+        self.logger.setLevel(i_logger_level)
+    
     def go_fetch(self):
         for i_thread_count in range(self.i_max_jobs):
             thr_current_worker = Thread(target=self.thread_process, args=(self.q_objects_to_process,))
@@ -57,7 +59,7 @@ class CoverFetcher:
             l_current_queue_element = q_current_queue.get()
             if l_current_queue_element is None:
                 break
-            print(colorama.Fore.GREEN + 'OUT: processing artist "{}", album "{}"'.format(*l_current_queue_element))
+            self.logger.info('Processing artist "{}", album "{}"'.format(*l_current_queue_element))    
             self.save(*l_current_queue_element)
             q_current_queue.task_done()
 
@@ -79,11 +81,11 @@ class CoverFetcher:
                     s_cover_image_file_name = target_directory + '/cover' + file_extension
                     with open(s_cover_image_file_name, 'wb') as image_file_out:
                         image_file_out.write(image_file_descriptor.data)
-                    print(colorama.Fore.GREEN + 'OUT: cover image saved to file ' + s_cover_image_file_name)
+                    self.logger.info('Cover image saved to file ' + s_cover_image_file_name)
 
                 return True
             except:
-                logger.exception('Error while fetching album cover')
+                self.logger.exception('Error while fetching album cover')
                 return None
         else:
             return None
@@ -97,7 +99,7 @@ class CoverFetcher:
             r = self.conn.request('GET', url)
             return self._fetchimage(json.loads(r.data.decode('utf-8')), 'extralarge')
         except:
-            logger.exception('Error while searching album cover')
+            self.logger.exception('Error while searching album cover')
             return None
 
 

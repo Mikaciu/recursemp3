@@ -8,7 +8,7 @@ from colorlog import ColoredFormatter
 # bold, bold_{color}, fg_bold_{color}, bg_bold_{color}: Bold/bright colors.
 # reset: Clear all formatting (both foreground and background colors).
 formatter = ColoredFormatter(
-    "%(fg_yellow)s%(asctime)s%(reset)s %(log_color)s%(levelname)-8s%(reset)s %(message)s",
+    "%(fg_yellow)s%(asctime)s%(reset)s %(log_color)s%(levelname)-8s%(reset)s [%(module)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     reset=True,
     log_colors={

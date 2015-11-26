@@ -22,7 +22,7 @@ def display_progress(i_number_of_files_processed, i_number_of_files_to_process, 
     b_step_reached = bool((i_number_of_files_processed % i_step) == 0)
 
     if b_step_reached ^ last_line:
-        mainlogger.info("OUT: Processed " + str(i_number_of_files_processed) + " of " + str(
+        mainlogger.info("Processed " + str(i_number_of_files_processed) + " of " + str(
             i_number_of_files_to_process) + " (" + str(
             round((100 * i_number_of_files_processed) / i_number_of_files_to_process, 2)) + "%).")
 
@@ -32,7 +32,11 @@ def main():
         description="Process all MP3 files contained in the argument, "
                     "and tag them <genre>/<artist>/[<albumindex>.]<album>/[<trackindex>.]<trackname>")
     parser.add_argument("-d", "--directory", required=True, help="Set the directory from which parsing all mp3 files")
-    parser.add_argument("-v", "--verbose", required=False, action="store_true", help="Increase output verbosity")
+
+    verbosity_group = parser.add_mutually_exclusive_group()
+    verbosity_group.add_argument("-v", "--verbose", required=False, action="store_true", help="Increase output verbosity")
+    verbosity_group.add_argument("-q", "--quiet", required=False, action="store_true", help="Decrease output verbosity")
+
     parser.add_argument("-r", "--remove-tags", action="store_true", default=False,
                         help="Remove existing tags before applying new tags")
     parser.add_argument("--debug", action="store_true", default=False,
@@ -49,10 +53,11 @@ def main():
     if args.debug:
         args.verbose = True
         mainlogger.setLevel(logging.DEBUG)
-
-    if args.debug:
         mainlogger.debug("args -> " + str(args))
 
+    if args.quiet:
+        mainlogger.setLevel(logging.WARNING)
+    
     if not os.path.isdir(args.directory):
         mainlogger.error('the argument supplied (' + args.directory + ') is not a directory.')
         sys.exit(1)
@@ -209,7 +214,11 @@ def main():
             mainlogger.debug("Tags are all set")
 
             mainlogger.debug("Saving file")
-            o_current_tags.save(filename=current_file, v1=0, v2_version=4)
+            try:
+                o_current_tags.save(filename=current_file, v1=0, v2_version=4)
+            except:
+                mainlogger.error("Unable to save tags for file {}".format(current_file))       
+            
             mainlogger.debug("Save done")
 
         i_number_of_files_processed += 1
@@ -233,6 +242,7 @@ def main():
     if len(dict_missing_cover_directories) > 0:
         mainlogger.info("fetching covers")
         cover_url = CoverFetcher(dict_missing_cover_directories)
+        cover_url.set_logger_level(mainlogger.getEffectiveLevel())
         cover_url.go_fetch()
 
 
