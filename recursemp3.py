@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
-import sys
 import fnmatch
-import re
 import logging
+import os
+import re
+import sys
 
-from mutagen.id3 import ID3, Encoding, TPE1, TALB, TCON, TPE2, TSOA, TRCK, TPOS, TIT2, TSOT, TFLT, ID3NoHeaderError
+from mutagen.id3 import ID3, Encoding, TPE1, TALB, TCON, TPE2, TSOA, TRCK, TPOS, TIT2, TSOT, TFLT, ID3NoHeaderError, \
+    TDRL
 
 from CoverFetcher import CoverFetcher
-import logger_config
 
 mainlogger = logging.getLogger("recursemp3")
 mainlogger.setLevel(logging.INFO)
@@ -23,18 +23,19 @@ def display_progress(i_number_of_files_processed, i_number_of_files_to_process, 
 
     if b_step_reached ^ last_line:
         mainlogger.info("Processed " + str(i_number_of_files_processed) + " of " + str(
-            i_number_of_files_to_process) + " (" + str(
-            round((100 * i_number_of_files_processed) / i_number_of_files_to_process, 2)) + "%).")
+                i_number_of_files_to_process) + " (" + str(
+                round((100 * i_number_of_files_processed) / i_number_of_files_to_process, 2)) + "%).")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Process all MP3 files contained in the argument, "
-                    "and tag them <genre>/<artist>/[<albumindex>.]<album>/[<trackindex>.]<trackname>")
+            description="Process all MP3 files contained in the argument, "
+                        "and tag them <genre>/<artist>/[<albumindex>.]<album>/[<trackindex>.]<trackname>")
     parser.add_argument("-d", "--directory", required=True, help="Set the directory from which parsing all mp3 files")
 
     verbosity_group = parser.add_mutually_exclusive_group()
-    verbosity_group.add_argument("-v", "--verbose", required=False, action="store_true", help="Increase output verbosity")
+    verbosity_group.add_argument("-v", "--verbose", required=False, action="store_true",
+                                 help="Increase output verbosity")
     verbosity_group.add_argument("-q", "--quiet", required=False, action="store_true", help="Decrease output verbosity")
 
     parser.add_argument("-r", "--remove-tags", action="store_true", default=False,
@@ -57,17 +58,20 @@ def main():
 
     if args.quiet:
         mainlogger.setLevel(logging.WARNING)
-    
+
     if not os.path.isdir(args.directory):
         mainlogger.error('the argument supplied (' + args.directory + ') is not a directory.')
         sys.exit(1)
 
     # INIT #
     p_find_album_index = re.compile('(?P<TSOA>[a-zA-Z]?[0-9]+)\.(?P<TALB>.*)')
+    p_find_album_and_year_index = re.compile('(?P<TDRL>\[[0-9]{8}\])(?P<TSOA>[a-zA-Z]?[0-9]+)\.(?P<TALB>.*)')
+    p_find_album_year_only = re.compile('(?P<TDRL>\[[0-9]{8}\])\.?(?P<TALB>.*)')
     p_find_track_and_disk_information = re.compile('^(?P<TPOS>[0-9]+)\.(?P<TRCK>[0-9]+)\.(?P<TIT2>.*)')
     p_find_track_only_information = re.compile('^(?P<TRCK>[0-9]+)\.(?P<TIT2>.*)')
     p_find_artist_information = re.compile('.*\((?P<TPE2>[^\)]+)\)$')
     p_is_image_file = re.compile('\.(jpe?g|png)$')
+    p_process_date = re.compile('^\[?(?P<year>[0-9]{4})(?P<month>[0-9]{2})(?P<day>[0-9]{2})\]?$')
 
     s_absolute_root_directory = os.path.abspath(args.directory)
     l_mp3_files = [os.path.join(dirpath, f)
@@ -91,7 +95,8 @@ def main():
 
         s_track_directory = current_root
         l_all_mp3_files_in_current_directory = fnmatch.filter(
-            [f for f in os.listdir(s_track_directory) if os.path.isfile(os.path.join(s_track_directory, f))], '*.mp3')
+                [f for f in os.listdir(s_track_directory) if os.path.isfile(os.path.join(s_track_directory, f))],
+                '*.mp3')
 
         # Genre / Artist / Album / Track
         current_root, s_album_name = os.path.split(current_root)
@@ -101,13 +106,34 @@ def main():
         if not args.only_cover:
             mainlogger.log(LOGGER_2DO, "Processing " + file_name)
             s_album_sort = ''
+            s_album_date = ''
 
+            m_album_index_and_year_found = re.match(p_find_album_and_year_index, s_album_name)
             m_album_index_found = re.match(p_find_album_index, s_album_name)
-            if m_album_index_found:
+            m_album_year_only_found = re.match(p_find_album_year_only, s_album_name)
+            if m_album_index_and_year_found:
+                s_album_sort = m_album_index_and_year_found.group('TSOA')
+                s_album_name = m_album_index_and_year_found.group('TALB')
+                s_album_date = m_album_index_and_year_found.group('TDRL')
+
+                m_date_processed = re.match(p_process_date, s_album_date)
+                if m_date_processed:
+                    s_album_date = '{}-{}-{}'.format(m_date_processed.group('year'), m_date_processed.group('month'), m_date_processed.group('day'))
+            elif m_album_index_found:
                 s_album_sort = m_album_index_found.group('TSOA')
                 s_album_name = m_album_index_found.group('TALB')
+            elif m_album_year_only_found:
+                s_album_name = m_album_year_only_found.group('TALB')
+                s_album_date = m_album_year_only_found.group('TDRL')
+
+                m_date_processed = re.match(p_process_date, s_album_date)
+                if m_date_processed:
+                    s_album_date = '{}-{}-{}'.format(m_date_processed.group('year'), m_date_processed.group('month'), m_date_processed.group('day'))
+
+                # the sorting index will be the date
+                s_album_sort = s_album_date
             elif args.debug:
-                mainlogger.warn("Could not find an album index in " + s_album_name)
+                mainlogger.warn("Could not find an album index and/or year in " + s_album_name)
 
             # TPOS / TRCK : track and disk number
             m_track_and_disk_index_found = re.match(p_find_track_and_disk_information, filename_without_extension)
@@ -118,18 +144,18 @@ def main():
 
                 # Number of tracks : the number of elements in the current directory matching the disk number
                 s_track_number = str(int(m_track_and_disk_index_found.group('TRCK'))) + '/' + str(
-                    len([e for e in l_all_mp3_files_in_current_directory if e.startswith(s_disk_number + '.')]))
+                        len([e for e in l_all_mp3_files_in_current_directory if e.startswith(s_disk_number + '.')]))
 
                 # Number of disks : the length of the set containing all first two characters of track names
                 s_disk_number = str(int(s_disk_number)) + '/' + str(
-                    len({e[:2] for e in l_all_mp3_files_in_current_directory}))
+                        len({e[:2] for e in l_all_mp3_files_in_current_directory}))
 
                 # The track name comes directly from the regex
                 s_track_name = m_track_and_disk_index_found.group('TIT2')
             elif m_track_only_index_found:
                 # the number of elements in the current directory
                 s_track_number = str(int(m_track_only_index_found.group('TRCK'))) + '/' + str(
-                    len(l_all_mp3_files_in_current_directory))
+                        len(l_all_mp3_files_in_current_directory))
                 s_disk_number = ''
                 s_track_name = m_track_only_index_found.group('TIT2')
             else:
@@ -170,13 +196,14 @@ def main():
             o_tags_to_set.add(TCON(encoding=Encoding.UTF8, text=s_genre_name))  # Genre
             o_tags_to_set.add(TPE1(encoding=Encoding.UTF8, text=s_artist_name))  # Artist
             o_tags_to_set.add(TALB(encoding=Encoding.UTF8, text=s_album_name))  # Album
+            o_tags_to_set.add(TDRL(encoding=Encoding.UTF8, text=s_album_date))  # Album
             o_tags_to_set.add(TPE2(encoding=Encoding.UTF8,
                                    text=s_album_artist_name))  # Album artist (in brackets, for VA albums)
             o_tags_to_set.add(TSOA(encoding=Encoding.UTF8, text=s_album_sort))  # Album sort number
             o_tags_to_set.add(TRCK(encoding=Encoding.UTF8, text=s_track_number))
             o_tags_to_set.add(TIT2(encoding=Encoding.UTF8, text=s_track_name))
             o_tags_to_set.add(
-                TSOT(encoding=Encoding.UTF8, text=s_track_number + '.' + s_disk_number))  # Track sort number
+                    TSOT(encoding=Encoding.UTF8, text=s_track_number + '.' + s_disk_number))  # Track sort number
             o_tags_to_set.add(TPOS(encoding=Encoding.UTF8, text=s_disk_number))
             o_tags_to_set.add(TFLT(encoding=Encoding.UTF8, text='MPG/3'))
 
@@ -217,8 +244,8 @@ def main():
             try:
                 o_current_tags.save(filename=current_file, v1=0, v2_version=4)
             except:
-                mainlogger.error("Unable to save tags for file {}".format(current_file))       
-            
+                mainlogger.error("Unable to save tags for file {}".format(current_file))
+
             mainlogger.debug("Save done")
 
         i_number_of_files_processed += 1
