@@ -98,6 +98,9 @@ class RecurseMP3:
         if args.quiet:
             self.mainlogger.setLevel(logging.WARNING)
 
+        if len(args.directories) == 0:
+            args.directories = ["."]
+            
         for current_directory in args.directories:
             if not os.path.isdir(current_directory):
                 self.mainlogger.error('The argument supplied ({}) is not a directory.'.format(current_directory))
