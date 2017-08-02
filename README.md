@@ -10,7 +10,26 @@ recursemp3 has been developed under Python 3.4. It will require the following py
  * colorlog (for pretty logging output)
 
 # USAGE
-`recursemp3 -d <directory name> [-v|--verbose] [--debug] [-r|--remove] [-c|--cover-only] [-n|--no-cover]`
+```
+usage: recursemp3.py [-h] [-v | -q | -d] [-r] [-n | -c]
+                     [directories [directories ...]]
+
+Process all MP3 files contained in the argument, and tag them
+<genre>/<artist>/[<albumindex>.]<album>/[<trackindex>.]<trackname>
+
+positional arguments:
+  directories        The list of directories to process. If none is chosen,
+                     the current directory will be used instead.
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -v, --verbose      Increase output verbosity
+  -q, --quiet        Decrease output verbosity
+  -d, --debug        Insanely huge amount of output. Do not use on large trees
+  -r, --remove-tags  Remove existing tags before applying new tags
+  -n, --no-cover     Do not try to fetch the album art (way much faster)
+  -c, --only-cover   Only fetch the album art (needs an Internet connection)
+```
 
 # What does it do ?
 ## Tagging
