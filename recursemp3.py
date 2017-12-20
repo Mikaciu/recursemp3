@@ -100,7 +100,7 @@ class RecurseMP3:
 
         if len(args.directories) == 0:
             args.directories = ["."]
-            
+
         for current_directory in args.directories:
             if not os.path.isdir(current_directory):
                 self.mainlogger.error('The argument supplied ({}) is not a directory.'.format(current_directory))
@@ -206,7 +206,6 @@ class RecurseMP3:
                         s_track_name = s_track_name.replace('(' + s_artist_name + ')', '')
                     else:
                         self.mainlogger.warning("Could not find a matching artist in " + filename_without_extension)
-                    s_track_number = s_disk_number = '0/0'
 
                 if s_album_name == 'various albums':
                     s_album_name = 'various ' + s_genre_name.lower() + ' albums'
@@ -274,9 +273,9 @@ class RecurseMP3:
                 self.mainlogger.debug("Setting tags")
                 for sCurrentTag in o_tags_to_set:
                     o_current_tags.add(o_tags_to_set[sCurrentTag])
-                    self.mainlogger.debug("Tags are all set")
+                    self.mainlogger.debug("The tag {} is set to {}".format(sCurrentTag, o_tags_to_set[sCurrentTag]))
 
-                self.mainlogger.debug("Saving file")
+                self.mainlogger.debug("Tags all set, saving file")
                 try:
                     o_current_tags.save(filename=current_file, v1=0, v2_version=4)
                 except:
