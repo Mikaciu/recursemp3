@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-import logging
 
+import logging
+from tqdm import tqdm
 from colorlog import ColoredFormatter
 
 
-class LoggerConfig:
-    LOGGER_2DO = logging.INFO + 1
-
+class LoggerHandler(logging.StreamHandler):
     def __init__(self):
-        super()
+        logging.StreamHandler.__init__(self)
 
         # {color}, fg_{color}, bg_{color}: Foreground and background colors.
         # The color names are black, red, green, yellow, blue, purple, cyan and white.
@@ -30,15 +29,24 @@ class LoggerConfig:
             style='%'
         )
 
+    def emit(self, record):
+        msg = self.format(record)
+        tqdm.write(msg)
+
+
+class LoggerConfig:
+    LOGGER_2DO = logging.INFO + 1
+
+    def __init__(self):
+        super()
+
         # create console handler and set level to debug
-        ch = logging.StreamHandler()
+        console_handler = LoggerHandler()
 
-        # add formatter to ch
-        ch.setFormatter(self.formatter)
-
-        logging.basicConfig(level=logging.WARNING, handlers=[ch])
+        logging.basicConfig(level=logging.WARNING, handlers=[console_handler])
 
         logging.addLevelName(LoggerConfig.LOGGER_2DO, '2DO')
 
-    def getLogger(self, logger_name):
+    @staticmethod
+    def get_logger(logger_name):
         return logging.getLogger(logger_name)

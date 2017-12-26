@@ -8,6 +8,7 @@ recursemp3 has been developed under Python 3.4. It will require the following py
  * argparse (for argument handling)
  * colorama (for pretty output)
  * colorlog (for pretty logging output)
+ * tqdm (for the progress bar)
 
 # USAGE
 ```

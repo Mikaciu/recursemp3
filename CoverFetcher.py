@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
+import json
+import logging
+from recursemp3_logging import LoggerConfig
+import os
+import urllib.parse
 from queue import Queue
 from threading import Thread
-import urllib.parse
-import json
-import os
-import logging
 
-import urllib3
 import certifi
-import colorama
+import urllib3
+
 
 class CoverFetcher:
     def __init__(self, dict_missing_cover_directories, i_max_concurrent_jobs=5):
@@ -32,12 +33,14 @@ class CoverFetcher:
         self.SEARCH_URL = "https://ws.audioscrobbler.com/2.0/?"
 
         self.l_threads = []
-        
-        self.logger = logging.getLogger('CoverFetcher')
+
+        self.logger_config = LoggerConfig()
+        self.logger = LoggerConfig.get_logger("CoverFetcher")
+        self.logger.setLevel(logging.INFO)
 
     def set_logger_level(self, i_logger_level):
         self.logger.setLevel(i_logger_level)
-    
+
     def go_fetch(self):
         for i_thread_count in range(self.i_max_jobs):
             thr_current_worker = Thread(target=self.thread_process, args=(self.q_objects_to_process,))
@@ -59,7 +62,7 @@ class CoverFetcher:
             l_current_queue_element = q_current_queue.get()
             if l_current_queue_element is None:
                 break
-            self.logger.info('Processing artist "{}", album "{}"'.format(*l_current_queue_element))    
+            self.logger.info('Processing artist "{}", album "{}"'.format(*l_current_queue_element))
             self.save(*l_current_queue_element)
             q_current_queue.task_done()
 
