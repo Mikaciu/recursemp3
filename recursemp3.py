@@ -222,8 +222,7 @@ class RecurseMP3:
                     o_tags_to_set.add(TCON(encoding=Encoding.UTF8, text=s_genre_name))  # Genre
                     if s_genre_name.lower() == "classical":
                         o_tags_to_set.add(TCOM(encoding=Encoding.UTF8, text=s_artist_name))  # Composer
-                    else:
-                        o_tags_to_set.add(TPE1(encoding=Encoding.UTF8, text=s_artist_name))  # Artist
+                    o_tags_to_set.add(TPE1(encoding=Encoding.UTF8, text=s_artist_name))  # Artist
                     o_tags_to_set.add(TALB(encoding=Encoding.UTF8, text=s_album_name))  # Album
                     o_tags_to_set.add(TDRL(encoding=Encoding.UTF8, text=s_album_date))  # Album
                     o_tags_to_set.add(TPE2(encoding=Encoding.UTF8,
