@@ -1,0 +1,7 @@
+mutagen
+urllib3
+certifi
+argparse
+colorama
+colorlog
+tqdm
